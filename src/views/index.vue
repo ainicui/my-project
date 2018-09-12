@@ -128,7 +128,11 @@ export default {
         });
     },
     showFrom() {
-      console.log(this.isVisible);
+      this.title = "新增列表"
+      this.id = ""
+      this.name = ""
+      this.content = ""
+      this.fileList = []
       this.isVisible = true;
     },
     handleEdit(index, val){
