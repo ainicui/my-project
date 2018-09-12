@@ -1,11 +1,13 @@
 <template>
   <div class="home">
     <el-container>
-      <el-header>Header</el-header>
+      <el-aside width="auto" style="height:100%;background:#fff">
+        <long-aside></long-aside>
+      </el-aside>
       <el-container>
-        <el-aside width="200px">Aside</el-aside>
+        <el-header>Header</el-header>
         <el-main>
-          <el-button type="primary" @click.native="isVisible=true" style="float: right; margin-bottom:10px;padding:10px 15px;">新增</el-button>
+          <el-button type="primary" @click.native="showFrom" style="float: right; margin-bottom:10px;padding:10px 15px;">新增</el-button>
           <el-table ref="multipleTable" :data="tableData" border tooltip-effect="dark" style="width: 100%" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55"></el-table-column>
             <el-table-column label="日期" width="200">
@@ -18,7 +20,7 @@
             <el-table-column prop="content" label="内容"></el-table-column>
             <el-table-column label="图片" width="300">
               <template slot-scope="scope">
-                <img :src="scope.row.imgUrl[0].url.url" alt="" srcset="" width="150" height="100" style="margin:auto">
+                <img :src="scope.row.imgUrl[0].url" alt="" srcset="" width="150" height="100" style="margin:auto">
               </template>
             </el-table-column>
             <el-table-column label="操作" width="180">
@@ -31,27 +33,56 @@
         </el-main>
       </el-container>
     </el-container>
-    <form-data :dialogFormVisible="isVisible"></form-data>
+    <!-- 表单部分 -->
+    <el-dialog :title="title" :visible.sync="isVisible">
+      <div class="from-data">
+        <el-form label-width="80px">
+          <el-form-item label="昵称">
+            <el-input v-model="name" placeholder="请输入用户名" clearable class="_input"></el-input>
+          </el-form-item>
+          <el-form-item label="内容">
+            <el-input v-model="content" type="textarea" placeholder="请输入内容" clearable class="_input"></el-input>
+          </el-form-item>
+          <el-form-item label="图片">
+            <el-upload class="upload-demo" action="http://localhost:3000/upload" style="text-align:left" :on-preview="handlePreview" :on-success="handleUploadImageSuccessed" :on-remove="handleRemove" :file-list="fileList" list-type="picture">
+              <el-button size="medium" type="primary">点击上传</el-button>
+            </el-upload>
+          </el-form-item>
+          <el-form-item label="">
+            <el-button @click.native="submit" type="primary" class="_button" style="width:100%">提交</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-dialog>
+    <!-- <form-data :status="isVisible"></form-data> -->
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import HelloWorld from "@/components/HelloWorld.vue";
-import formData from "./form_data.vue";
+import longAside from "@/components/aside.vue";
 import $ajax from "axios";
 export default {
   name: "home",
   components: {
-    HelloWorld,
-    formData
+    longAside
   },
   data() {
     return {
+      id: this.$route.query.id,
       tableData: [],
       multipleSelection: [],
-      isVisible: false
+      isVisible: false,
+      name: "",
+      content: "",
+      fileList: [],
+      title: "新增列表"
     };
+  },
+  watch: {
+    isVisible(val) {
+      console.log(val);
+    }
   },
   methods: {
     toggleSelection(rows) {
@@ -95,6 +126,67 @@ export default {
             message: "已取消删除"
           });
         });
+    },
+    showFrom() {
+      console.log(this.isVisible);
+      this.isVisible = true;
+    },
+    handleEdit(index, val){
+      this.isVisible = true;
+      this.title = "编辑列表"
+      this.id = val._id
+      this.name = val.user_name
+      this.content = val.content
+      this.fileList = val.imgUrl
+      console.log(val)
+    },
+    submit() {
+      let _this = this;
+      $ajax
+        .post("http://localhost:3000/users/from", {
+          user_name: this.name,
+          content: this.content,
+          imgUrl: this.fileList,
+          id: this.id
+        })
+        .then(res => {
+          console.log(res);
+          if (res.data.code == 1) {
+            this.$message({
+              type: "success",
+              message: res.data.msg,
+              onClose: function() {
+                _this.dialogFormVisible = false;
+                _this.$router.push({ path: "/" });
+              }
+            });
+          } else {
+            this.$message({
+              type: "info",
+              message: res.data.msg
+            });
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    handleUploadImageSuccessed: function(response, file, list) {
+      if(file.response.code === 1){
+        this.fileList.push({
+          type: file.response.data.type,
+          url: file.response.data.url
+        })
+      }else{
+        alert('上传失败')
+      }
+      console.log(this.fileList)
+    },
+    handleRemove(file, fileList) {
+      console.log(file, fileList);
+    },
+    handlePreview(file) {
+      console.log(file);
     }
   },
   mounted() {
@@ -109,6 +201,12 @@ export default {
 };
 </script>
 <style lang="scss">
+.home{
+   height: 100%;
+  .el-container{
+    height: 100%
+  }
+}
 .el-header,
 .el-footer {
   background-color: #b3c0d1;

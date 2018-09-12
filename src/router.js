@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/index.vue'
-import formData from './views/form_data.vue'
 
 Vue.use(Router)
 
@@ -13,11 +12,6 @@ export default new Router({
       path: '/',
       name: 'home',
       component: Home
-    },
-    {
-      path: '/form_data',
-      name: 'form_data',
-      component: formData
     },
     {
       path: '/about',
